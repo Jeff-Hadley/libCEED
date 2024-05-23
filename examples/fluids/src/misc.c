@@ -244,6 +244,7 @@ int FreeContextPetsc(void *data) {
 }
 
 // Return mass qfunction specification for number of components N
+// THIS ONE IS IMPORANT
 PetscErrorCode CreateMassQFunction(Ceed ceed, CeedInt N, CeedInt q_data_size, CeedQFunction *qf) {
   PetscFunctionBeginUser;
   switch (N) {
@@ -273,6 +274,38 @@ PetscErrorCode CreateMassQFunction(Ceed ceed, CeedInt N, CeedInt q_data_size, Ce
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
+PetscErrorCode CreateStiffQFunction(Ceed ceed, CeedInt N, CeedInt dim, CeedInt q_data_size, CeedQFunction *qf) {
+  PetscFunctionBeginUser;
+  switch (dim) {
+    case 2:
+      PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_1_2D, Stiff_1_loc, qf));
+      break;
+   case 3:
+      PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_1_3D, Stiff_1_loc, qf));
+      break;
+   // case 5:
+   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_5, Stiff_5_loc, qf));
+   //   break;
+   // case 7:
+   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_7, Stiff_7_loc, qf));
+   //   break;
+   // case 9:
+   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_9, Stiff_9_loc, qf));
+   //   break;
+   // case 22:
+   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_22, Stiff_22_loc, qf));
+   //   break;
+    default:
+      SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_SUP, "Could not find stiff qfunction of size %d", N);
+  }
+
+  PetscCallCeed(ceed, CeedQFunctionAddInput(*qf, "du", N*dim, CEED_EVAL_GRAD));
+  PetscCallCeed(ceed, CeedQFunctionAddInput(*qf, "qdata", q_data_size, CEED_EVAL_NONE));
+  PetscCallCeed(ceed, CeedQFunctionAddOutput(*qf, "dv", N*dim, CEED_EVAL_GRAD));
+  PetscCallCeed(ceed, CeedQFunctionSetUserFlopsEstimate(*qf, N));
+  PetscFunctionReturn(PETSC_SUCCESS);
+}
+
 PetscErrorCode NodalProjectionDataDestroy(NodalProjectionData context) {
   PetscFunctionBeginUser;
   if (context == NULL) PetscFunctionReturn(PETSC_SUCCESS);
@@ -284,6 +317,15 @@ PetscErrorCode NodalProjectionDataDestroy(NodalProjectionData context) {
 
   PetscCall(PetscFree(context));
   PetscFunctionReturn(PETSC_SUCCESS);
+}
+
+PetscErrorCode MassMatrixDataDestroy(MassMatrixData context) {
+  PetscFunctionBeginUser;
+  if (context == NULL) PetscFunctionReturn(PETSC_SUCCESS);
+
+  PetscCall(DMDestroy(&context->dm));
+  PetscCall(PetscFree(context));
+  PetscFunctionReturn(PETSC_SUCCESS); 
 }
 
 /*
