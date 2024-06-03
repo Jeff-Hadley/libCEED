@@ -81,7 +81,6 @@ PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, Ceed
   PetscCallCeed(ceed, CeedBasisDestroy(&basis_mass));
   PetscCallCeed(ceed, CeedOperatorDestroy(&op_mass));
   PetscCallCeed(ceed, CeedQFunctionDestroy(&qf_stiff));
-  PetscCallCeed(ceed, CeedBasisDestroy(&basis_stiff));
   PetscCallCeed(ceed, CeedOperatorDestroy(&op_stiff));
   PetscFunctionReturn(PETSC_SUCCESS);
 }
