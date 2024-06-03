@@ -15,6 +15,7 @@
 
 #include "../navierstokes.h"
 #include "../qfunctions/mass.h"
+#include "../qfunctions/stiff.h"
 
 PetscErrorCode ICs_FixMultiplicity(DM dm, CeedData ceed_data, User user, Vec Q_loc, Vec Q, CeedScalar time) {
   Ceed         ceed = user->ceed;
@@ -278,23 +279,12 @@ PetscErrorCode CreateStiffQFunction(Ceed ceed, CeedInt N, CeedInt dim, CeedInt q
   PetscFunctionBeginUser;
   switch (dim) {
     case 2:
-      PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_1_2D, Stiff_1_loc, qf));
+      PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_1_2D, Stiff_1_2D_loc, qf));
       break;
    case 3:
-      PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_1_3D, Stiff_1_loc, qf));
+      PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_1_3D, Stiff_1_3D_loc, qf));
       break;
-   // case 5:
-   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_5, Stiff_5_loc, qf));
-   //   break;
-   // case 7:
-   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_7, Stiff_7_loc, qf));
-   //   break;
-   // case 9:
-   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_9, Stiff_9_loc, qf));
-   //   break;
-   // case 22:
-   //   PetscCallCeed(ceed, CeedQFunctionCreateInterior(ceed, 1, Stiff_22, Stiff_22_loc, qf));
-   //   break;
+
     default:
       SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_SUP, "Could not find stiff qfunction of size %d", N);
   }

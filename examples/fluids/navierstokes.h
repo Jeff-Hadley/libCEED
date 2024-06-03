@@ -427,6 +427,8 @@ extern const PetscInt32 FLUIDS_FILE_TOKEN_64;
 
 // Create appropriate mass qfunction based on number of components N
 PetscErrorCode CreateMassQFunction(Ceed ceed, CeedInt N, CeedInt q_data_size, CeedQFunction *qf);
+// Cretae appropriate stiff qfunction based on number of components N
+PetscErrorCode CreateStiffQFunction(Ceed ceed, CeedInt N, CeedInt dim, CeedInt q_data_size, CeedQFunction *qf);
 
 PetscErrorCode NodalProjectionDataDestroy(NodalProjectionData context);
 
