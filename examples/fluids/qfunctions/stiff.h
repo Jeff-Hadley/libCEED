@@ -6,19 +6,20 @@
 // This file is part of CEED:  http://github.com/ceed
 
 /// @file
-/// Mass operator for Navier-Stokes example using PETSc
+/// Stiffness operator for Navier-Stokes example using PETSc
 #include <ceed.h>
 #include <math.h>
 #include "utils.h"
 // *****************************************************************************
-// This QFunction applies the mass matrix to five interlaced fields.
+// This QFunction applies the stiffness matrix to a single field. Support for
+// additional fields to come.
 //
 // Inputs:
-//   u      - Input vector at quadrature points
+//   du      - Input vector at quadrature points
 //   q_data - Quadrature weights
 //
 // Output:
-//   v - Output vector at quadrature points
+//   dv - Output vector at quadrature points
 //
 // *****************************************************************************
 CEED_QFUNCTION_HELPER int Stiff_N(void *ctx, CeedInt Q, const CeedScalar *const *in, CeedScalar *const *out, const CeedInt N, const CeedInt dim) {
@@ -88,12 +89,8 @@ CEED_QFUNCTION_HELPER int Stiff_N(void *ctx, CeedInt Q, const CeedScalar *const 
                     dv[k][j][i] = wdetJ * (du[0][j][i] * dXdxdXdxT[0][k] + du[1][j][i] * dXdxdXdxT[1][k] + du[2][j][i] * dXdxdXdxT[2][k]);
                 }
             }
-            // Matrid matrix 
+            // Matrid matrix - This is a function that might do the same
            // MatMatN(dXdx3,dXdx3,N,CEED_NOTRANSPOSE, CEED_TRANSPOSE,dXdxdXdxT)
-
-            break;
-        default:
-            SETERRQ(PETSC_COMM_WORLD, PETSC_ERR_SUP, "Dim = %d is not currently supported", dim);
             break;
     }
   }

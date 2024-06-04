@@ -309,14 +309,6 @@ PetscErrorCode NodalProjectionDataDestroy(NodalProjectionData context) {
   PetscFunctionReturn(PETSC_SUCCESS);
 }
 
-PetscErrorCode MassMatrixDataDestroy(MassMatrixData context) {
-  PetscFunctionBeginUser;
-  if (context == NULL) PetscFunctionReturn(PETSC_SUCCESS);
-
-  PetscCall(DMDestroy(&context->dm));
-  PetscCall(PetscFree(context));
-  PetscFunctionReturn(PETSC_SUCCESS); 
-}
 
 /*
  * @brief Open a PHASTA *.dat file, grabbing dimensions and file pointer
