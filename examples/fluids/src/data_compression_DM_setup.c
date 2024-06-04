@@ -12,16 +12,14 @@
 #include "../navierstokes.h"
 
 
-
-PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, CeedElemRestriction *elem_restr_mass,
-                                                        CeedVector *mass_vector) {
+PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, CeedElemRestriction *elem_restr_mass, CeedInt dim, Mat *mat_assembled_mass, Mat *mat_assembled_stiff) {
   DM mass;
-  CeedInt N;
+  CeedInt N = 1;
   CeedOperator         op_mass, op_stiff;
   CeedQFunction        qf_mass, qf_stiff;
   CeedBasis            basis_mass; //both mass and stiffness can use the same basis
   CeedInt              q_data_size;
-  MPI_Comm             comm = PetscObjectComm((PetscObject)user->dm);
+  // MPI_Comm             comm = PetscObjectComm((PetscObject)user->dm);
   DMLabel              domain_label = NULL;
   PetscInt             label_value = 0, height = 0, dm_field = 0; 
 
@@ -50,10 +48,11 @@ PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, Ceed
 
   // -- Build Stiffness Operator - op_stiff
   PetscCall(CreateStiffQFunction(ceed, N, dim, q_data_size, &qf_stiff));
-  PetscCallCeed(ceed, CeedOperatorCreate(ceed, qf_stiff, NULL, NULL, &op_mass));
-  PetscCallCeed(ceed, CeedOperatorSetField(op_mass, "du", *elem_restr_mass, basis_mass, CEED_VECTOR_ACTIVE));
-  PetscCallCeed(ceed, CeedOperatorSetField(op_mass, "qdata", ceed_data->elem_restr_qd_i, CEED_BASIS_NONE, ceed_data->q_data));
-  PetscCallCeed(ceed, CeedOperatorSetField(op_mass, "dv", *elem_restr_mass, basis_mass, CEED_VECTOR_ACTIVE));
+  PetscCallCeed(ceed, CeedOperatorCreate(ceed, qf_stiff, NULL, NULL, &op_stiff));
+  PetscCallCeed(ceed, CeedOperatorSetField(op_stiff, "du", *elem_restr_mass, basis_mass, CEED_VECTOR_ACTIVE));
+  PetscCallCeed(ceed, CeedOperatorSetField(op_stiff, "qdata", ceed_data->elem_restr_qd_i, 
+  CEED_BASIS_NONE, ceed_data->q_data));
+  PetscCallCeed(ceed, CeedOperatorSetField(op_stiff, "dv", *elem_restr_mass, basis_mass, CEED_VECTOR_ACTIVE));
 
 
   {  // -- Create MatCEEDs to then be assembled
@@ -63,13 +62,13 @@ PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, Ceed
     PetscCall(MatCeedCreate(mass, mass, op_stiff, NULL, &mat_stiff));
 
     // this assembles the mat_xxxx from above
-    Mat mat_assembled_mass, mat_assembled_stiff;
+    //Mat mat_assembled_mass, mat_assembled_stiff;
     
-    PetscCall(MatCeedCreateMatCOO(mat_mass, &mat_assembled_mass));
-    PetscCall(MatCeedAssembleCOO(mat_mass, mat_assembled_mass));
+    PetscCall(MatCeedCreateMatCOO(mat_mass, mat_assembled_mass));
+    PetscCall(MatCeedAssembleCOO(mat_mass, *mat_assembled_mass));
    
-    PetscCall(MatCeedCreateMatCOO(mat_stiff, &mat_assembled_stiff));
-    PetscCall(MatCeedAssembleCOO(mat_stiff, mat_assembled_stiff));
+    PetscCall(MatCeedCreateMatCOO(mat_stiff, mat_assembled_stiff));
+    PetscCall(MatCeedAssembleCOO(mat_stiff, *mat_assembled_stiff));
     
     // Call to destroy matrices, but want these to be used before getting destroyed I think.
     PetscCall(MatDestroy(&mat_mass));
