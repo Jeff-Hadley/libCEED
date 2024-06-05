@@ -477,6 +477,8 @@ PetscErrorCode SetupLibceed(Ceed ceed, CeedData ceed_data, DM dm, User user, App
   if (app_ctx->turb_spanstats_enable) PetscCall(TurbulenceStatisticsSetup(ceed, user, ceed_data, problem));
   if (app_ctx->diff_filter_monitor && !user->diff_filter) PetscCall(DifferentialFilterSetup(ceed, user, ceed_data, problem));
   if (app_ctx->sgs_train_enable) PetscCall(SGS_DD_TrainingSetup(ceed, user, ceed_data, problem));
+  if (true) PetscCall(DataCompSetupApply(ceed, user, ceed_data, dim));
+  //call the Dm setup function for Data Compression here.
 
   PetscCallCeed(ceed, CeedVectorDestroy(&jac_data));
   PetscCallCeed(ceed, CeedElemRestrictionDestroy(&elem_restr_jd_i));

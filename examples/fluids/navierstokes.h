@@ -174,6 +174,11 @@ typedef struct {
   KSP                  ksp;
 } *NodalProjectionData;
 
+typedef struct {
+  CeedInt dim;
+  Mat assembled_mass, assembled_stiff;
+} *DataCompression;
+
 typedef PetscErrorCode (*SgsDDNodalStressEval)(User user, Vec Q_loc, Vec VelocityGradient, Vec SGSNodal_loc);
 typedef PetscErrorCode (*SgsDDNodalStressInference)(Vec DD_Inputs_loc, Vec DD_Outputs_loc, void *ctx);
 typedef struct {
@@ -238,6 +243,7 @@ struct User_private {
   DiffFilterData       diff_filter;
   SmartSimData         smartsim;
   SGS_DD_TrainingData  sgs_dd_train;
+  DataCompression      data_comp;
 };
 
 // Units
@@ -492,3 +498,9 @@ PetscErrorCode SGS_DD_TrainingSetup(Ceed ceed, User user, CeedData ceed_data, Pr
 PetscErrorCode TSMonitor_SGS_DD_Training(TS ts, PetscInt step_num, PetscReal solution_time, Vec Q, void *ctx);
 PetscErrorCode TSPostStep_SGS_DD_Training(TS ts);
 PetscErrorCode SGS_DD_TrainingDataDestroy(SGS_DD_TrainingData sgs_dd_train);
+
+// -----------------------------------------------------------------------------
+// Data Compression  
+// -----------------------------------------------------------------------------
+PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, CeedInt dim);
+PetscErrorCode DataCompressionDestroy(DataCompression data_comp);

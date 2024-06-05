@@ -50,6 +50,7 @@
 /// @file
 /// Navier-Stokes example using PETSc
 
+#include "petscmat.h"
 const char help[] = "Solve Navier-Stokes using PETSc and libCEED\n";
 
 #include "navierstokes.h"
@@ -195,6 +196,13 @@ int main(int argc, char **argv) {
   // -- Set up libCEED objects
   PetscCall(SetupLibceed(ceed, ceed_data, dm, user, app_ctx, problem, bc));
 
+
+  // ---------------------------------------------------------------------------
+  // Check that mass and stiff matrices are as expected - output to file
+  // ---------------------------------------------------------------------------
+  PetscCall(MatViewFromOptions(user->data_comp->assembled_mass, NULL, "-mat_view :mass_mat.m:ascii_matlab"));
+  PetscCall(MatViewFromOptions(user->data_comp->assembled_stiff, NULL, "-mat_view :stiff_mat.m:ascii_matlab"));
+
   // ---------------------------------------------------------------------------
   // Set up ICs
   // ---------------------------------------------------------------------------
@@ -254,6 +262,7 @@ int main(int argc, char **argv) {
   PetscCall(DifferentialFilterDataDestroy(user->diff_filter));
   PetscCall(SGS_DD_TrainingDataDestroy(user->sgs_dd_train));
   PetscCall(SmartSimDataDestroy(user->smartsim));
+  PetscCall(DataCompressionDestroy(user->data_comp));
 
   // -- Vectors
   PetscCallCeed(ceed, CeedVectorDestroy(&ceed_data->x_coord));
