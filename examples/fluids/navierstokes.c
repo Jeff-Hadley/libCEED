@@ -200,9 +200,9 @@ int main(int argc, char **argv) {
   // ---------------------------------------------------------------------------
   // Check that mass and stiff matrices are as expected - output to file
   // ---------------------------------------------------------------------------
-  PetscCall(MatViewFromOptions(user->data_comp->assembled_mass, NULL, "-mat_view :mass_mat.m:ascii_matlab"));
-  PetscCall(MatViewFromOptions(user->data_comp->assembled_stiff, NULL, "-mat_view :stiff_mat.m:ascii_matlab"));
-
+  printf("Calling the MatViewFromOptions function");
+  PetscCall(MatViewFromOptions(user->data_comp->assembled_mass, NULL, "-mat_view_ass_mass"));
+  PetscCall(MatViewFromOptions(user->data_comp->assembled_stiff, NULL, "-mat_view_ass_stiff"));
   // ---------------------------------------------------------------------------
   // Set up ICs
   // ---------------------------------------------------------------------------

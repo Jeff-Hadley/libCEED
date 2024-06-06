@@ -18,6 +18,7 @@ config.mk
 *.dSYM
 *~
 *.dylib
+*.asv
 
 # Coverage
 *.gcno
@@ -71,6 +72,7 @@ doc/sphinx/source/examples/
 perf.data
 *.log
 *.npy
+*.m
 
 # Editor Misc
 .cache/
