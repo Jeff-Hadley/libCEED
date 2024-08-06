@@ -5,3 +5,5 @@ navierstokes
 *.log
 *.png
 *.csv
+*.dat
+*.info

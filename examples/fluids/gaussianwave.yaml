@@ -36,6 +36,17 @@ ksp_rtol: 1e-2
 snes_lag_jacobian: 20
 snes_lag_jacobian_persists:
 
+# Data Compression Settings
+# compress: true
+compress_data: false
+data_comp:
+  pc_hypre_boomeramg:
+    coarsen_type: modifiedRuge-Stueben
+    interp_type: classical
+    strong_threshold: 0.60 #0.25 for 2D, 0.60 for 3D
+    numfunctions: 1
+    max_row_sum: 1.0
+
 ## Demonstrate acoustic wave dissipation using an internal damping layer
 # idl:
 #   decay_time: 2e-3

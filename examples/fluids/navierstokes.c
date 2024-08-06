@@ -50,7 +50,10 @@
 /// @file
 /// Navier-Stokes example using PETSc
 
+#include <complex.h>
 #include "petscmat.h"
+#include "petscsystypes.h"
+#include "petscvec.h"
 const char help[] = "Solve Navier-Stokes using PETSc and libCEED\n";
 
 #include "navierstokes.h"
@@ -59,6 +62,13 @@ const char help[] = "Solve Navier-Stokes using PETSc and libCEED\n";
 #include <ceed.h>
 #include <petscdmplex.h>
 #include <petscts.h>
+
+// New includes to use Hypre
+//#include <petscpc.h>
+//#include <petscksp.h>
+//#include <petscviewer.h>
+//#include "../../petsc/src/mat/impls/hypre/mhypre.h"
+
 
 int main(int argc, char **argv) {
   // ---------------------------------------------------------------------------
@@ -200,9 +210,65 @@ int main(int argc, char **argv) {
   // ---------------------------------------------------------------------------
   // Check that mass and stiff matrices are as expected - output to file
   // ---------------------------------------------------------------------------
-  printf("Calling the MatViewFromOptions function");
-  PetscCall(MatViewFromOptions(user->data_comp->assembled_mass, NULL, "-mat_view_ass_mass"));
-  PetscCall(MatViewFromOptions(user->data_comp->assembled_stiff, NULL, "-mat_view_ass_stiff"));
+  if(app_ctx->compress)PetscCall(DataCompExtractProlongation(user));  
+
+//  // ** NEW ** Attempt to call HYPRE functions.
+//  printf("Calling Hypre Functions \n");
+//  PC pcHypre;
+//  Vec x, b;
+//  PetscCall(KSPCreate(user->comm, &user->data_comp->kspHypre));
+//  PetscCall(KSPSetType(user->data_comp->kspHypre, KSPRICHARDSON));
+//  PetscCall(KSPGetPC(user->data_comp->kspHypre, &pcHypre));
+//  PetscCall(PCSetType(pcHypre, PCHYPRE));
+//  PetscCall(PCHYPRESetType(pcHypre, "boomeramg"));
+//  PetscCall(PCSetOptionsPrefix(pcHypre, "data_comp_")); //yaml file will have options for data compression under 'data_comp:'
+//  PetscCall(PCSetFromOptions(pcHypre));
+//  PetscCall(PCSetOperators(pcHypre, user->data_comp->assembled_stiff, user->data_comp->assembled_stiff));
+//  PetscCall(PCSetUp(pcHypre));
+//  
+//  //PetscCall(KSPGetPC(user->data_comp->kspHypre, &user->data_comp->pcHypre));
+//  //PetscCall(PCCreate(user->comm, &user->data_comp->pcHypre));
+//  //PetscCall(PCSetType(user->data_comp->pcHypre, PCHYPRE));
+//  //PetscCall(PCHYPRESetType(user->data_comp->pcHypre, "boomeramg"));
+//  //PetscCall(PCSetOptionsPrefix(user->data_comp->pcHypre, "data_comp_"));
+//  //PetscCall(PCSetFromOptions(user->data_comp->pcHypre)); //NEED TO FIGURE OUT WHERE TO SET THESE OPTIONS
+//  //PetscCall(PCSetUp(user->data_comp->pcHypre));
+//  //PetscCall(PCSetOperators(user->data_comp->pcHypre, user->data_comp->assembled_stiff, user->data_comp->assembled_stiff));
+//  
+//  PetscCall(MatCreateVecs(user->data_comp->assembled_stiff, &x, &b));
+//  PetscCall(PCApply(pcHypre, x, b));
+//  PetscCall(VecDestroy(&x));
+//  PetscCall(VecDestroy(&b));
+//  PetscCall(PCView(pcHypre, NULL));
+//  PetscCall(PCGetInterpolations(pcHypre, &user->data_comp->num_levels, &user->data_comp->ProlongationOps));
+//  //PetscCall(PCApply(user->data_comp->pcHypre, user->data_comp->x, user->data_comp->b));
+//  //PetscCall(PCView(user->data_comp->pcHypre, NULL));
+//  //PetscCall(PCGetInterpolations(user->data_comp->pcHypre, &user->data_comp->num_levels, &user->data_comp->ProlongationOps));
+//  
+//  printf("Num levels: %d\n", user->data_comp->num_levels);
+//  printf("Finished calling the Hypre functions \n");
+//
+//  printf("Calling the MatView functions \n");
+//  PetscViewer viewer;
+//  PetscCall(PetscViewerCreate(user->comm, &viewer));
+//  //PetscCall(PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB));
+//  PetscCall(PetscViewerPushFormat(viewer, PETSC_VIEWER_BINARY_MATLAB));
+//  #define filenametemplate "Prolongation_%d.dat"
+//  
+//  char file_name[20];
+//  for(int i = 0; i < (int)user->data_comp->num_levels-1; i++){
+//    sprintf(file_name, filenametemplate, i+1);
+//    printf("%s \n", file_name);
+//    PetscCall(PetscViewerBinaryOpen(user->comm, file_name, FILE_MODE_WRITE, &viewer));
+//    //PetscCall(PetscViewerASCIIOpen(user->comm, file_name, &viewer));
+//    PetscCall(MatView(user->data_comp->ProlongationOps[i], viewer));
+//  }
+//  PetscCall(PetscViewerDestroy(&viewer));
+//
+//  PetscCall(MatViewFromOptions(user->data_comp->assembled_mass, NULL, "-mat_view_ass_mass"));
+//  PetscCall(MatViewFromOptions(user->data_comp->assembled_stiff, NULL, "-mat_view_ass_stiff"));
+//  printf("Finished calling the MatView functions\n");
+
   // ---------------------------------------------------------------------------
   // Set up ICs
   // ---------------------------------------------------------------------------
@@ -262,7 +328,7 @@ int main(int argc, char **argv) {
   PetscCall(DifferentialFilterDataDestroy(user->diff_filter));
   PetscCall(SGS_DD_TrainingDataDestroy(user->sgs_dd_train));
   PetscCall(SmartSimDataDestroy(user->smartsim));
-  PetscCall(DataCompressionDestroy(user->data_comp));
+  PetscCall(DataCompDestroy(user->data_comp));
 
   // -- Vectors
   PetscCallCeed(ceed, CeedVectorDestroy(&ceed_data->x_coord));

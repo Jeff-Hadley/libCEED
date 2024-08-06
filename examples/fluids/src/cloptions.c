@@ -215,6 +215,9 @@ PetscErrorCode ProcessCommandLineOptions(MPI_Comm comm, AppCtx app_ctx, SimpleBC
   PetscCall(
       PetscOptionsBool("-sgs_train_enable", "Enable Data-Driven SGS training", NULL, app_ctx->sgs_train_enable, &app_ctx->sgs_train_enable, NULL));
 
+  PetscCall(
+      PetscOptionsBool("-compress_data", "Enable Data Compression on Solution", NULL, app_ctx->compress, &app_ctx->compress, NULL));    
+
   PetscOptionsEnd();
   PetscFunctionReturn(PETSC_SUCCESS);
 }

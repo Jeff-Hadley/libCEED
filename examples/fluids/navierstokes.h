@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 #include "./include/petsc_ops.h"
+#include "petscsystypes.h"
 #include "qfunctions/newtonian_types.h"
 
 #if PETSC_VERSION_LT(3, 21, 0)
@@ -144,6 +145,8 @@ struct AppCtx_private {
   // Differential Filtering
   PetscBool         diff_filter_monitor;
   MeshTransformType mesh_transform_type;
+  // Data Compression
+  PetscBool         compress;
 };
 
 // libCEED data struct
@@ -174,9 +177,13 @@ typedef struct {
   KSP                  ksp;
 } *NodalProjectionData;
 
+//Data Compression 
 typedef struct {
   CeedInt dim;
+  PetscInt num_levels;
   Mat assembled_mass, assembled_stiff;
+  Mat *ProlongationOps;
+  KSP kspHypre;
 } *DataCompression;
 
 typedef PetscErrorCode (*SgsDDNodalStressEval)(User user, Vec Q_loc, Vec VelocityGradient, Vec SGSNodal_loc);
@@ -500,7 +507,8 @@ PetscErrorCode TSPostStep_SGS_DD_Training(TS ts);
 PetscErrorCode SGS_DD_TrainingDataDestroy(SGS_DD_TrainingData sgs_dd_train);
 
 // -----------------------------------------------------------------------------
-// Data Compression  
+// Data Compression Functions
 // -----------------------------------------------------------------------------
 PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, CeedInt dim);
-PetscErrorCode DataCompressionDestroy(DataCompression data_comp);
+PetscErrorCode DataCompExtractProlongation(User user);
+PetscErrorCode DataCompDestroy(DataCompression data_comp);
