@@ -38,7 +38,7 @@ snes_lag_jacobian_persists:
 
 # Data Compression Settings
 # compress: true
-compress_data: false
+compress_data: true
 data_comp:
   pc_hypre_boomeramg:
     coarsen_type: modifiedRuge-Stueben

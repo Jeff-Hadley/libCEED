@@ -181,8 +181,10 @@ typedef struct {
 typedef struct {
   CeedInt dim;
   PetscInt num_levels;
+  PetscInt *n_per_level;
   Mat assembled_mass, assembled_stiff;
   Mat *ProlongationOps;
+  PetscBT *CFMarkers;
   KSP kspHypre;
 } *DataCompression;
 

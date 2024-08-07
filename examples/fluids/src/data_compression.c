@@ -95,6 +95,12 @@ PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, Ceed
 }
 
 
+//PetscErrorCode DataCompMultilevelDecomp(DataCompression data){
+//  PetscFunctionBeginUser;
+//  
+//  PetscFunctionReturn(PETSC_SUCCESS); 
+//}
+
 PetscErrorCode DataCompExtractProlongation(User user){
   
   printf("Calling Hypre Functions \n");
@@ -118,28 +124,46 @@ PetscErrorCode DataCompExtractProlongation(User user){
   PetscCall(VecDestroy(&b));
   PetscCall(PCView(pcHypre, NULL));
   PetscCall(PCGetInterpolations(pcHypre, &user->data_comp->num_levels, &user->data_comp->ProlongationOps));
+  PetscCall(PCGetCFMarkers(pcHypre, &user->data_comp->n_per_level, &user->data_comp->CFMarkers));
   
   printf("Num levels: %d\n", user->data_comp->num_levels);
   printf("Finished calling the Hypre functions \n");
 
-  printf("Calling the MatView functions \n");
-  PetscViewer viewer;
-  PetscCall(PetscViewerCreate(user->comm, &viewer));
-  PetscCall(PetscViewerPushFormat(viewer, PETSC_VIEWER_BINARY_MATLAB));
-  #define filenametemplate "Prolongation_%d.dat"
+  printf("Calling the Viewer functions \n");
+  PetscViewer viewer1;
+  PetscCall(PetscViewerCreate(user->comm, &viewer1));
+  PetscCall(PetscViewerPushFormat(viewer1, PETSC_VIEWER_BINARY_MATLAB));
+  
+  PetscViewer viewer2;
+  PetscCall(PetscViewerCreate(user->comm, &viewer2));
+  PetscCall(PetscViewerPushFormat(viewer2, PETSC_VIEWER_ASCII_MATLAB));
+  
+  #define Prolongationtemplate "Prolongation_%d.dat"
+  #define CFMarkertemplate "CFMarkers_%d.dat"
   
   char file_name[20];
   for(int i = 0; i < (int)user->data_comp->num_levels-1; i++){
-    sprintf(file_name, filenametemplate, i+1);
+    sprintf(file_name, Prolongationtemplate, i+1);
     printf("%s \n", file_name);
-    PetscCall(PetscViewerBinaryOpen(user->comm, file_name, FILE_MODE_WRITE, &viewer));
-    PetscCall(MatView(user->data_comp->ProlongationOps[i], viewer));
+    PetscCall(PetscViewerBinaryOpen(user->comm, file_name, FILE_MODE_WRITE, &viewer1));
+    PetscCall(MatView(user->data_comp->ProlongationOps[i], viewer1));
   }
-  PetscCall(PetscViewerDestroy(&viewer));
+
+  for(int i = 0; i < (int)user->data_comp->num_levels-1; i++){
+    sprintf(file_name, CFMarkertemplate, i+1);
+    printf("%s \n", file_name);
+    PetscCall(PetscViewerASCIIOpen(user->comm, file_name, &viewer2));
+    printf("nodes on level %d: %d", i, user->data_comp->n_per_level[i]);
+    PetscCall(PetscBTView(user->data_comp->n_per_level[i],user->data_comp->CFMarkers[i], viewer2));
+  }
+
+  PetscCall(PetscViewerDestroy(&viewer1));
+  PetscCall(PetscViewerDestroy(&viewer2));
+
 
   PetscCall(MatViewFromOptions(user->data_comp->assembled_mass, NULL, "-mat_view_ass_mass"));
   PetscCall(MatViewFromOptions(user->data_comp->assembled_stiff, NULL, "-mat_view_ass_stiff"));
-  printf("Finished calling the MatView functions\n");
+  printf("Finished calling the Viewer functions\n");
   
   PetscFunctionReturn(PETSC_SUCCESS); 
 }
