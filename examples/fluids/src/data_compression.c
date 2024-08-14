@@ -226,7 +226,7 @@ PetscErrorCode DataCompProlongFloor(MPI_Comm comm, DataCompression data_comp){
   PetscFunctionReturn(PETSC_SUCCESS); 
 }
 
-PetscErrorCode DataCompGetLocaltoGlobal(MPI_Comm comm, DataCompression data_comp){
+PetscErrorCode DataCompGetIndexSets(MPI_Comm comm, DataCompression data_comp){
   //Vec *LtoGtemp;
   IS  *LtoGtempIS;
   IS  *OnlyFineGlobtemp;
@@ -363,6 +363,7 @@ PetscErrorCode DataCompDecompose(MPI_Comm comm, DataCompression data_comp, Vec x
     PetscCall(KSPSetOperators(ksp, Mass_c, Mass_c));
     PetscCall(KSPSolve(ksp, f, z)); // Calculate correction factor z
     PetscCall(VecDestroy(&f));
+    PetscCall(KSPDestroy(&ksp));
 
     //Adding correction factor to original solution x
     PetscCall(VecAXPY(x_c_i, 1, z)); //x(coarse nodes) + z | adding the correction factors

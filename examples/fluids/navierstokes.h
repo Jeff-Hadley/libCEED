@@ -521,5 +521,6 @@ PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, Ceed
 PetscErrorCode DataCompExtractProlongation(User user);
 PetscErrorCode DataCompExportMats(User user);
 PetscErrorCode DataCompProlongFloor(MPI_Comm comm, DataCompression data_comp);
-PetscErrorCode DataCompGetLocaltoGlobal(MPI_Comm comm, DataCompression data_comp);
+PetscErrorCode DataCompGetIndexSets(MPI_Comm comm, DataCompression data_comp);
+PetscErrorCode DataCompDecompose(MPI_Comm comm, DataCompression data_comp, Vec x);
 PetscErrorCode DataCompDestroy(DataCompression data_comp);
