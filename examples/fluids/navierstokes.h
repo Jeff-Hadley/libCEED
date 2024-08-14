@@ -13,6 +13,7 @@
 #include <stdbool.h>
 
 #include "./include/petsc_ops.h"
+#include "petscistypes.h"
 #include "petscsystypes.h"
 #include "qfunctions/newtonian_types.h"
 
@@ -179,13 +180,18 @@ typedef struct {
 
 //Data Compression 
 typedef struct {
-  CeedInt dim;
-  PetscInt num_levels;
-  PetscInt *n_per_level;
-  Mat assembled_mass, assembled_stiff;
-  Mat *ProlongationOps;
-  PetscBT *CFMarkers;
-  KSP kspHypre;
+  CeedInt              dim;
+  PetscInt             num_levels;
+  PetscInt            *n_per_level;
+  Mat                  assembled_mass, assembled_stiff;
+  Mat                 *ProlongationOps;
+  Mat                 *Pfloor;
+  PetscBT             *CFMarkers;
+  IS                  *LocToGlobIS;  //"Finest" level index numbers of current level nodes.
+  IS                  *CoarsetoFineIS; //Relative index numbering between levels. Value in coarse level index is the fine level index of that coarse node.
+  IS                  *OnlyFineGlobIS; //"Finest" level index numbers of fine only nodes of curent level. used to index full solution
+  IS                  *OnlyFineOnLevelIS; //On level index numbers of fine only nodes of curent. Use to get sub matrices of Prolongations. 
+  KSP                  kspHypre;
 } *DataCompression;
 
 typedef PetscErrorCode (*SgsDDNodalStressEval)(User user, Vec Q_loc, Vec VelocityGradient, Vec SGSNodal_loc);
@@ -513,4 +519,7 @@ PetscErrorCode SGS_DD_TrainingDataDestroy(SGS_DD_TrainingData sgs_dd_train);
 // -----------------------------------------------------------------------------
 PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, CeedInt dim);
 PetscErrorCode DataCompExtractProlongation(User user);
+PetscErrorCode DataCompExportMats(User user);
+PetscErrorCode DataCompProlongFloor(MPI_Comm comm, DataCompression data_comp);
+PetscErrorCode DataCompGetLocaltoGlobal(MPI_Comm comm, DataCompression data_comp);
 PetscErrorCode DataCompDestroy(DataCompression data_comp);

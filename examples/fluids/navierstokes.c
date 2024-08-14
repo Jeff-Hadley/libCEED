@@ -52,6 +52,7 @@
 
 #include <complex.h>
 #include "petscmat.h"
+#include "petscsys.h"
 #include "petscsystypes.h"
 #include "petscvec.h"
 const char help[] = "Solve Navier-Stokes using PETSc and libCEED\n";
@@ -210,7 +211,12 @@ int main(int argc, char **argv) {
   // ---------------------------------------------------------------------------
   // Check that mass and stiff matrices are as expected - output to file
   // ---------------------------------------------------------------------------
-  if(app_ctx->compress)PetscCall(DataCompExtractProlongation(user));  
+  if(app_ctx->compress){
+    PetscCall(DataCompExtractProlongation(user)); 
+    PetscCall(DataCompProlongFloor(user->comm, user->data_comp));
+    PetscCall(DataCompGetLocaltoGlobal(user->comm, user->data_comp));
+    PetscCall(DataCompExportMats(user));
+  }
 
 //  // ** NEW ** Attempt to call HYPRE functions.
 //  printf("Calling Hypre Functions \n");
