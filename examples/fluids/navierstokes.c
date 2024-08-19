@@ -212,10 +212,15 @@ int main(int argc, char **argv) {
   // Check that mass and stiff matrices are as expected - output to file
   // ---------------------------------------------------------------------------
   if(app_ctx->compress){
-    PetscCall(DataCompExtractProlongation(user)); 
-    PetscCall(DataCompProlongFloor(user->comm, user->data_comp));
-    PetscCall(DataCompGetIndexSets(user->comm, user->data_comp));
-    PetscCall(DataCompExportMats(user));
+    if(app_ctx->testFuncs){
+      PetscCall(DataCompValidateFunctions(user));
+    }
+    else{
+     PetscCall(DataCompExtractProlongation(user)); 
+     PetscCall(DataCompProlongFloor(user->comm, user->data_comp));
+     PetscCall(DataCompGetIndexSets(user->comm, user->data_comp));
+     PetscCall(DataCompExportMats(user));
+    }
   }
 
   // ---------------------------------------------------------------------------

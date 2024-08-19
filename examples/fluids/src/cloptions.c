@@ -217,6 +217,9 @@ PetscErrorCode ProcessCommandLineOptions(MPI_Comm comm, AppCtx app_ctx, SimpleBC
 
   PetscCall(
       PetscOptionsBool("-compress_data", "Enable Data Compression on Solution", NULL, app_ctx->compress, &app_ctx->compress, NULL));    
+  
+  PetscCall(
+      PetscOptionsBool("-datacomp_test_funcs", "Enable Data Compression Functions testing", NULL, app_ctx->testFuncs, &app_ctx->testFuncs, NULL)); 
 
   PetscOptionsEnd();
   PetscFunctionReturn(PETSC_SUCCESS);
