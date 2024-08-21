@@ -37,7 +37,6 @@ snes_lag_jacobian: 20
 snes_lag_jacobian_persists:
 
 # Data Compression Settings
-# compress: true
 compress_data: true
 datacomp_test_funcs: true
 data_comp:
