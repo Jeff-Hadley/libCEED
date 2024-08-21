@@ -528,6 +528,8 @@ PetscErrorCode DataCompRecompose(MPI_Comm comm, DataCompression data_comp, Vec x
 PetscErrorCode DataCompOnLevelMass(PetscInt level, DataCompression data_comp, Mat *Mass_l);
 PetscErrorCode DataCompCorrectionFactors(MPI_Comm comm, DataCompression data_comp, PetscInt i, 
                 PetscInt nfine, PetscInt ncoarse, Mat Mass_f, Mat Mass_c, Vec x_f_i, Vec *z);
+PetscErrorCode DataCompCompressCoeffs(User user, DataCompression data_comp, Vec u, 
+                PetscScalar comp_perc);
 PetscErrorCode DataCompValidateFunctions(User user);
-PetscErrorCode DataCompEvalSolutionFunction(Vec X, Vec U);
+PetscErrorCode DataCompEvalSolutionTestFunction(Vec X, Vec U);
 PetscErrorCode DataCompDestroy(DataCompression data_comp);

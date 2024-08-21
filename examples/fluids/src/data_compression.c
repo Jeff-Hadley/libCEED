@@ -26,8 +26,8 @@
 #include <petscvec.h>
 #include <petscviewer.h>
 
-// Sets up the mass and stiffness matrices of a poisson problem associated to the mesh the actual problem is being solved on.
-// Assembles into global mass and stiff matrices. 
+// Sets up the mass and stiffness matrices of a poisson problem associated with the mesh the actual problem is being solved on.
+// Assembles into global mass and stiffness matrices. 
 
 PetscErrorCode DataCompSetupApply(Ceed ceed, User user, CeedData ceed_data, CeedInt dim) {
   DM mass;
@@ -505,6 +505,51 @@ PetscErrorCode DataCompOnLevelMass(PetscInt level, DataCompression data_comp, Ma
   PetscFunctionReturn(PETSC_SUCCESS);  
 }
 
+// Sets identified indexs of u to 0.0 (compression).
+PetscErrorCode DataCompCompressCoeffs(User user, DataCompression data_comp, Vec u, PetscScalar comp_perc){
+  
+  PetscInt *idx;
+  PetscInt n_nodes, n_to_comp, temp;
+  PetscScalar *vals;
+  Vec u_temp, u_coarsest;
+   
+  
+  PetscFunctionBeginUser;
+  //Get copy of array values of u to sort and get index sets. 
+  PetscCall(VecDuplicate(u, &u_temp));
+  PetscCall(VecCopy(u, u_temp));
+  PetscCall(VecGetArray(u_temp, &vals));
+
+  //Get sub matrix of coarsest nodes values in u that must stay
+  PetscCall(VecGetSubVector(u, data_comp->LocToGlobIS[0], &u_coarsest));
+  printf("Coarsest node values of u before compression:\n");
+  PetscCall(VecView(u_coarsest, PETSC_VIEWER_STDOUT_WORLD));
+
+  PetscCall(MatGetSize(data_comp->assembled_mass, &n_nodes, &temp));
+  PetscCall(PetscMalloc1(n_nodes, &idx));
+  n_to_comp = (PetscInt)(comp_perc/100.0 * n_nodes);
+  printf("n_to_comp: %d\n", n_to_comp);
+  
+  // Set current index of u
+  for(PetscInt i = 0; i < n_nodes; i++){
+    idx[i] = i;
+  }
+  //Sort smallest to largest
+  PetscCall(PetscSortRealWithArrayInt(n_nodes, vals, idx));
+  PetscCall(VecRestoreArray(u_temp, &vals));
+  PetscCall(VecDestroy(&u_temp));
+
+  //Zero out the values we are dropping
+  for(PetscInt i = 0; i < n_to_comp; i++){
+    PetscCall(VecSetValue(u, idx[i], 0.0, INSERT_VALUES));
+  }
+
+  PetscCall(VecRestoreSubVector(u, data_comp->LocToGlobIS[0], &u_coarsest));
+  PetscCall(PetscFree(idx));
+  
+  PetscFunctionReturn(PETSC_SUCCESS);   
+}
+
 
 PetscErrorCode DataCompValidateFunctions(User user){
     Mat Mass;
@@ -514,8 +559,10 @@ PetscErrorCode DataCompValidateFunctions(User user){
     PetscScalar Ptemplate[6];
     PetscInt idxm[2], idxn[2];
     
-    PetscInt n_nodes = 17;
+    //PetscInt n_nodes;
+    PetscScalar comp_percentage = 50;
     PetscInt n_levels = 5;
+    PetscInt n_nodes = PetscPowInt(2, n_levels-1) + 1;
     PetscInt nper[n_levels];
   
     PetscFunctionBeginUser;
@@ -531,12 +578,11 @@ PetscErrorCode DataCompValidateFunctions(User user){
     printf("Node locations:\n");
     PetscCall(VecView(x, PETSC_VIEWER_STDOUT_WORLD));
     
-   
    PetscCall(VecCreate(user->comm, &u));
    PetscCall(VecSetType(u, VECSTANDARD));
    PetscCall(VecSetSizes(u, PETSC_DECIDE, n_nodes));
 
-   PetscCall(DataCompEvalSolutionFunction(x, u));
+   PetscCall(DataCompEvalSolutionTestFunction(x, u));
    printf("Node Values at x locations:\n");
    PetscCall(VecView(u, PETSC_VIEWER_STDOUT_WORLD));
 
@@ -544,9 +590,6 @@ PetscErrorCode DataCompValidateFunctions(User user){
     for(PetscInt i = n_levels-1; i > 0; i--){
       nper[i-1] = (nper[i]-1)/2 + 1;
     }
-    //nper[0] = 2;
-    //nper[1] = 3;
-    //nper[2] = 5;
     
     // Set Up Mass Matrix
     template[0] = 0.8333333333;
@@ -593,20 +636,6 @@ PetscErrorCode DataCompValidateFunctions(User user){
       PetscCall(MatSetSizes(P[i], PETSC_DECIDE, PETSC_DECIDE, nper[i+1], nper[i]));  
     }
 
-   // for(PetscInt i = 0; i < n_levels-1; i++){
-   //   Pidxm[0] = 0 + i*2;
-   //   Pidxm[1] = 1 + i*2;
-   //   Pidxm[2] = 2 + i*2;
-
-   //   Pidxn[0] = 0 + i;
-   //   Pidxn[1] = 1 + i;
-   //   if(i < 1){
-   //     PetscCall(MatSetValues(P[0], 3, Pidxm, 2, Pidxn, Ptemplate, INSERT_VALUES));
-   //   }
-   //   PetscCall(MatSetValues(P[1], 3, Pidxm, 2, Pidxn, Ptemplate, INSERT_VALUES));
-
-   // }
-
     for(PetscInt level = 0; level < n_levels-1; level++){
       for(PetscInt i = 0; i < nper[level]-1; i++){
         Pidxm[0] = 0 + i*2;
@@ -622,24 +651,6 @@ PetscErrorCode DataCompValidateFunctions(User user){
       printf("P[%d]:\n", level);
       PetscCall(MatView(P[level], PETSC_VIEWER_STDOUT_WORLD)); 
     }
-
-    
-   // PetscCall(MatAssemblyBegin(P[1], MAT_FINAL_ASSEMBLY));
-   // PetscCall(MatAssemblyEnd(P[1], MAT_FINAL_ASSEMBLY));
-   // printf("P[1]:\n");
-   // PetscCall(MatView(P[1], PETSC_VIEWER_STDOUT_WORLD));
-   // 
-   // PetscCall(MatAssemblyBegin(P[0], MAT_FINAL_ASSEMBLY));
-   // PetscCall(MatAssemblyEnd(P[0], MAT_FINAL_ASSEMBLY));
-   // printf("P[0]:\n");
-   // PetscCall(MatView(P[0], PETSC_VIEWER_STDOUT_WORLD));
-    /* P[[0]] and P[1] should be this
-   [[1.0  0.0  0.0
-     0.5  0.5  0.0
-     0.0  1.0] 0.0
-     0.0  0.5  0.5
-     0.0  0.0  1.0]
-    */
 
     // Create CFMarkers
     PetscBT *CFMarkers;
@@ -690,20 +701,35 @@ PetscErrorCode DataCompValidateFunctions(User user){
     printf("u after recomposition:\n");
     PetscCall(VecView(u, PETSC_VIEWER_STDOUT_WORLD));
     //PetscCall(DataCompExportMats(user));
+    printf("=====================================\n");
+    printf("        COMPRESSION TIME\n");
+    printf("=====================================\n");
+    printf("=== Entering Decompositon Routine ===");
+    PetscCall(DataCompDecompose(user->comm, user->data_comp, u));
+    printf("u after decomposition:\n");
+    PetscCall(VecView(u, PETSC_VIEWER_STDOUT_WORLD)); 
+    printf("=== Entering Compression ===\n");
+    PetscCall(DataCompCompressCoeffs(user, user->data_comp, u, comp_percentage));
+    printf("delta_u after compression:\n");
+    PetscCall(VecView(u, PETSC_VIEWER_STDOUT_WORLD)); 
+    printf("=== Entering Recompositon Routine ===");
+    PetscCall(DataCompRecompose(user->comm, user->data_comp, u));
+    printf("u after recomposition:\n");
+    PetscCall(VecView(u, PETSC_VIEWER_STDOUT_WORLD)); 
 
     PetscCall(VecDestroy(&x));
     PetscCall(VecDestroy(&u));
 
-    Mat Mass_l;
-    for(PetscInt i = 0; i < 3; i++){
-      PetscCall(DataCompOnLevelMass(i, user->data_comp, &Mass_l));
-      printf("Mass matrix of level %d\n", i);
-      PetscCall(MatView(Mass_l, PETSC_VIEWER_STDOUT_WORLD));
-    }
+   // Mat Mass_l;
+   // for(PetscInt i = 0; i < 3; i++){
+   //   PetscCall(DataCompOnLevelMass(i, user->data_comp, &Mass_l));
+   //   printf("Mass matrix of level %d\n", i);
+   //   PetscCall(MatView(Mass_l, PETSC_VIEWER_STDOUT_WORLD));
+   // }
     PetscFunctionReturn(PETSC_SUCCESS);  
 }
 
-PetscErrorCode DataCompEvalSolutionFunction(Vec X, Vec U){
+PetscErrorCode DataCompEvalSolutionTestFunction(Vec X, Vec U){
   
   const PetscScalar *x;
   PetscScalar *u;
